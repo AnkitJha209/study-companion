@@ -13,3 +13,128 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User{
+  id                        String                @id @default(uuid())
+  name                      String                
+  username                  String
+  email                     String                @unique
+  password                  String
+  interests                 String[]
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+
+  quizAttempt               QuizAttempt[]
+  // relations
+  pdfs                      Pdf[]
+}
+
+
+model Pdf{
+  id                        String                @id @default(uuid())
+  fileName                  String
+  fileUrl                   String
+  collectionName            String
+  userId                    String
+  user                      User                  @relation(fields: [userId], references: [id])
+  createdAt                 DateTime              @default(now())
+
+
+  concepts                  Concept[]
+}
+
+model Concept{
+  id                        String                @id @default(uuid())
+  title                     String
+  description               String
+  difficulty                DifficultiLevel
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  pdfId                     String
+  pdf                       Pdf                   @relation(fields: [pdfId], references: [id])
+
+  flashCards                FlashCard[]
+  quizzes                   Quiz[]
+}
+
+model FlashCard{
+  id                        String                @id @default(uuid())
+  question                  String
+  answer                    String
+  hint                      String?
+  type                      FlashType
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  conceptId                 String
+  concept                   Concept              @relation(fields: [conceptId], references: [id])
+}
+
+model Quiz{
+  id                        String                @id @default(uuid())
+  title                     String
+  conceptId                 String
+  concept                   Concept              @relation(fields: [conceptId], references: [id])
+  createdAt                 DateTime              @default(now())
+
+  questions                 Question[]
+  quizAttempt               QuizAttempt[]
+}
+
+model Question{
+  id                        String                @id @default(uuid())
+  question                  String
+  quizId                    String
+  quiz                      Quiz                  @relation(fields: [quizId], references: [id])
+  createdAt                 DateTime              @default(now())
+
+  options                   Option[]
+  userAnswers               UserAnswer[]                
+}
+
+model Option{
+  id                        String                @id @default(uuid())
+  option                    String
+  questionId                String
+  isCorrect                 Boolean
+  question                  Question              @relation(fields: [questionId], references: [id])
+
+  userAnswer                UserAnswer[]
+}
+
+model QuizAttempt{
+  id                        String                @id @default(uuid())
+  userId                    String
+  quizId                    String
+  score                     Int
+  feedback                  String?
+  weekPoints                Json?
+
+  user                      User                  @relation(fields: [userId], references: [id])
+  quiz                      Quiz                  @relation(fields: [quizId], references: [id])
+
+  answers                   UserAnswer[]
+}
+
+model UserAnswer{
+  id                        String                @id @default(uuid())
+  attemptId                 String
+  questionId                String
+  optionId                  String
+
+  attempt                   QuizAttempt           @relation(fields: [attemptId], references: [id])
+  question                  Question              @relation(fields: [questionId], references: [id])
+  option                    Option                @relation(fields: [optionId], references: [id])
+}
+
+enum DifficultiLevel{
+  HARD
+  MEDIUM
+  EASY
+}
+
+enum FlashType{
+  DEFINITION
+  EXAMPLE
+  LIST
+  BOOLEAN
+}
